@@ -1,3 +1,6 @@
+Using c++ load tensorflow model with protobuf
+Don't need process with bazel
+
 # RUN
 ## STEP 
 ### 1. ```mkdir build```
