@@ -42,16 +42,19 @@ static bool read_proto_from_binary(const char* filepath, google::protobuf::Messa
 int main()
 {
     tensorflow::GraphDef tf_graph;
-    const char* tensorflowpb =  "/home/starhiking/code/onnx_saveloader/tensorflow/models/mobilenet_v2_self_frozen.pb";
+    const char* tensorflowpb =  "/home/starhiking/code/tensorflow/models/reverse_frozen.pb";
     if(!read_proto_from_binary(tensorflowpb,&tf_graph))
     {
         fprintf(stderr,"read tensorflow frozen model failed.\n");
         return -1;
     }
     cout<<"read graph successfully"<<endl<<"==============================="<<endl;
-
+    vector <string> node_names;
+    vector <string> node_ops;
+    int op_nums = 0;
+    cout<<"node size : "<<tf_graph.node_size()<<endl;
     for(int i = 0;i<tf_graph.node_size();i++)
-    {
+    {       
         NodeDef node = tf_graph.node(i);
         cout<<node.name()<<"  "<<node.op()<<"   "<<"  "<<node.input_size()<<"  ";
         for(int j = 0;j<node.input_size();j++)
@@ -59,39 +62,36 @@ int main()
             cout<<node.input(j)<<"   ";
         }
         cout<<endl<<endl;
-
-    }
-    
-    cout<<"================================"<<endl;
-
-    for(int i =0;i<tf_graph.node_size();i++)
-    {
-        NodeDef node = tf_graph.node(i);
-        
-        if(node.op()=="Identity")
+        node_ops.push_back(node.op());
+        node_names.push_back(node.name());
+        for(int j = 0;j<node.input_size();j++)
+        {
+            if(count(node_names.begin(),node_names.end(),node.input(j))==0)
+            {
+                cout<<"WARNING : "<<node.name()<< " input is not previous. with "<<node.op()<<endl;
+                cout<<endl<<endl;
+            }
+        }
+        if(false&&node.op() == "Squeeze")
         {
             node.PrintDebugString();
-            // node.PrintDebugString();
-            // cout<<node.attr_size()<<endl;
-            google::protobuf::Map<string, AttrValue >::const_iterator it;
-            it = node.attr().begin();
-            while(it!=node.attr().end())    
-            {
-                // cout<< it->first <<endl;
-                if(it->first=="value")
-                {
-                    cout<<node.name()<<"  "<<it->second.tensor().tensor_shape().DebugString()<<endl;
-
-                }
-
-                it++;
-            }
-      
-            // break;
         }
     }
+    
 
-    cout<<"================================"<<endl;    
+    cout<<"================================"<<endl;
+    cout<<"node op : ";
+    sort(node_ops.begin(),node_ops.end());
+    auto iter = unique(node_ops.begin(),node_ops.end());
+    node_ops.erase(iter,node_ops.end());
+    for(size_t i =0;i<node_ops.size();i++)
+    {
+        cout<<node_ops[i]<<"  ";
+    }
+    getchar();
+
+
+    cout<<"================================"<<endl;
     return 0;
 
 }
